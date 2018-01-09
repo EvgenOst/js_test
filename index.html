@@ -1,356 +1,103 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<link rel="stylesheet" type="text/css" href="css/site.css">
-		<script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
-		<script src="https://www.youtube.com/iframe_api"></script>
-		<title>Пример</title>
-		
-	</head>
-	<body>
-
-	
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="stylesheets/styles.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<title>Пример</title>
+</head>
+<body>
+	<div class="status" id="status">Строка статуса</div>
 	<div class="body-container">
-			<nav class="navbar">
-				<div class="container-navbar">
-					<div class="profile">
-						<div class="icon"></div>
-						<div class="name button">Евгений</div>
-					</div>
-					<div class="form-search">
-						<form action="" method="post" class="search">
-						  <input type="text" name="text-to-find" placeholder="поиск" class="input" />
-						  <input type="button" name="" onclick="javascript: FindOnPage('text-to-find'); return false;" class="submit" />
-						</form>
-					</div>
+		<nav class="navbar">
+			<div class="container-navbar">
+				<div class="profile">
+					<div class="icon"></div>
+					<div class="name button">Евгений</div>
 				</div>
-				<div class="add" >
-					<a class="button show" href="" id="go">Добавить запись</a>
-						
-				</div>
-			</nav>
-			<div class="container">
-				<div class="content">
-					<div class="player" id="video-placeholder"></div>
-					<div class="bottom-player">
-						<div class="title-content" ><p id="title-content"></p></div>
-						<div class="created_utc"><p id="created_utc"></p></div>
-						<div class="view-counter"><p id="view-counter"</p></div>
-					</div>
-				</div>
-				<div class="sidebar" id="sidebar">
+				<div class="form-search">
+					<form action="" method="post" class="search">
+						<input type="text" id="search-input" placeholder="поиск" class="search-input" />
+						<button type="button" id="search-button" class="search-submit">Поиск</button>
+					</form>
 				</div>
 			</div>
-		</div>	
-		<script>
-		var id = getUrlVars()["id"];
-		var playlist = "";
-		var items = [];
-		var mainItem = {};
-		var player = {};
-		
-		$.getJSON('localstorage/Music.json', function(data){			
-			
-			
-			
-			for(var i in data.data.children){
-				if (data.data.children[i].data.domain === "youtube.com")
-				{
-					var clone = JSON.parse(JSON.stringify(data.data.children[i]));
-					//var clone = $.extend(true, {}, data.children[i]);
-					if (clone.data['url'].indexOf('&') > 0){
-					clone.data['url'] = clone.data['url'].substring(
-														clone.data['url'].indexOf('v=')+2, 
-														clone.data['url'].indexOf('&')
-														);
-					} 
-					else {
-						clone.data['url'] = clone.data['url'].substring(
-														clone.data['url'].indexOf('v=')+2 );
-					}
-					
-					if (items.length == 0 && !id)  id = clone.data['url'];									
-					
-					items.push(clone);	
-					clone = {};
-				}
-			}
-			
-			if (id == undefined){
-				mainItem = JSON.parse(JSON.stringify(items[0]));
-				id = mainItem.data['url'];
-			
-			//
-			$('#title-content').append('<p>'+mainItem.data.title+'</p>');
-			//var created_utc = new Date(mainItem.data.created_utc);
-			$('#created_utc').append('Опубликовано: '+mainItem.data.created_utc); //.toDateString()
-			$('#view-counter').append(mainItem.data.score+' просмотров');
-			}
-			else {
-				for (i in items)
-				{
-					if (id == items[i].data['url'])
-					{
-						$('#title-content').append('<p>'+items[i].data.title+'</p>');
-						//var created_utc = new Date(mainItem.data.created_utc);
-						$('#created_utc').append('Опубликовано: '+items[i].data.created_utc); //.toDateString()
-						$('#view-counter').append(items[i].data.score+' просмотров');
-						break;
-					}
-				}
-			}
-			for(var i = 0; i < items.length; i++)
-			{
-				var a = document.createElement('a');
-				a.href = "index.html?id="+items[i].data['url'];
-				a.id = items[i].data['url'];
-				a.onclick = function(){
-					window.location.assign('/index.html#id='+id);
-				};
-				
-				var div = document.createElement('div');
-				div.className = 'sidebar-element';
-				
-				var divDesc = document.createElement('div');
-				div.className = 'sidebar-description';
-				
-				var img = document.createElement('img');
-				img.src="";
-				
-				var title = document.createElement('div');
-				title.className = 'title-sidebar';
-				title.appendChild(document.createTextNode(items[i].data.title));
-				
-				var score = document.createElement('div');
-				score.className = 'description';
-				score.appendChild(document.createTextNode('Просмотров '+items[i].data.score));
-				
-				divDesc.appendChild(title);
-				divDesc.appendChild(score);
-				div.appendChild(img);
-				div.appendChild(divDesc);
-				a.appendChild(div);
-				$('.sidebar').append(a);
-			}
-			
-			
-		});
-		
-		function getUrlVars() {
-		    var vars = {};
-		    var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-		        vars[key] = value;
-		    });
-		    return vars;
-}
-		
-		function onYouTubeIframeAPIReady() {
-		    player = new YT.Player('video-placeholder', {
-		        width: 600,
-		        height: 400,
-		        videoId: id,
-		        playerVars: {
-		            color: 'white',
-		            playlist: ""
-		        },
-		        events: {
-		            onReady: initialize
-		        }
-		    });
-			}
-		function initialize(){
-
-		    // Обновляем элементы управления и загружаем
-		    updateTimerDisplay();
-		    updateProgressBar();
-
-		    // Сброс старого интервала
-		    clearInterval(time_update_interval);
-
-		    // Запускаем обновление таймера и дорожки проигрывания
-		    // каждую секунду.
-		    time_update_interval = setInterval(function () {
-		        updateTimerDisplay();
-		        updateProgressBar();
-		    }, 1000)
-
-		}
-		
-		function updateTimerDisplay(){
-		    // Обновление текущего времени.
-		    $('#current-time').text(formatTime( player.getCurrentTime() ));
-		    $('#duration').text(formatTime( player.getDuration() ));
-		}
-
-		function formatTime(time){
-		    time = Math.round(time);
-
-		    var minutes = Math.floor(time / 60),
-		    seconds = time - minutes * 60;
-
-		    seconds = seconds < 10 ? '0' + seconds : seconds;
-
-		    return minutes + ":" + seconds;
-		}
-		
-		$('#progress-bar').on('mouseup touchend', function (e) {
-
-		    // Вычисление нового времени.
-		    // новое время в секундах = общая время видео * ( значение поля / 100 )
-		    var newTime = player.getDuration() * (e.target.value / 100);
-
-		    // Воспроизведение видео с нового времени.
-		    player.seekTo(newTime);
-
-		});
-		
-		// Данная функция будет вызвана в initialize()
-		function updateProgressBar(){
-		    // Update the value of our progress bar accordingly.
-		    $('#progress-bar').val((player.getCurrentTime() / player.getDuration()) * 100);
-		}
-		
-		$('#play').on('click', function () {
-		    player.playVideo();
-		});
-
-		$('#pause').on('click', function () {
-		    player.pauseVideo();
-		});
-		
-		$('#mute-toggle').on('click', function() {
-		    var mute_toggle = $(this);
-
-		    if(player.isMuted()){
-		        player.unMute();
-		        mute_toggle.text('volume_up');
-		    }
-		    else{
-		        player.mute();
-		        mute_toggle.text('volume_off');
-		    }
-		});
-		
-		$('#volume-input').on('change', function () {
-		    player.setVolume($(this).val());
-		});
-		
-		$('#speed').on('change', function () {
-		    player.setPlaybackRate($(this).val());
-		});
-		
-		$('#quality').on('change', function () {
-		    player.setPlaybackQuality($(this).val());
-		});
-		
-		$('#next').on('click', function () {
-		    player.nextVideo()
-		});
-
-		$('#prev').on('click', function () {
-		    player.previousVideo()
-		});
-		
-		$('.thumbnail').on('click', function () {
-
-		    var url = $(this).attr('data-video-id');
-
-		    player.cueVideoById(url);
-
-		});
-		
-		function create (url, title, score){
-			alert('url - '+url);
-		}
-		
-	</script>
-		
-	<script>
-	
-		//Неудачное AJAX изменение видео
-		/*$(document).ready(function(){
-				var j = 0;
-				var elements = $("#sidebar").children();
-				elements.each(function(i, elem){
-					
-					$(elem).click(function(){
-						$.getJSON('localstorage/Music.json', function(data){			
-							for(var i in data.data.children){
-								if (data.data.children[i].data.domain === "youtube.com" &&
-									data.data.children[i].data.id === elem.id)
-								{
-							var clone = JSON.parse(JSON.stringify(data.data.children[i]));
-							//var clone = $.extend(true, {}, data.children[i]);
-							
-							clone.data['url'] = clone.data['url'].substring(
-																clone.data['url'].indexOf('v=')+2, 
-																clone.data['url'].indexOf('&')
-																);
-						
-							$('#title-content').html(clone.data['title']);
-							$('#created_utc').html("Опубликовано: "+clone.data['created_utc']);
-							$('#view-counter').html(clone.data['score']+" просмотров");
-							player.playVideo(clone.data['url']);
-								}
-							}
-						});
-					});
-				});
-				
-			});*/
-
-		$(document).ready(function() { // вся мaгия пoсле зaгрузки стрaницы
-			$('a#go').click( function(event){ // лoвим клик пo ссылки с id="go"
-				event.preventDefault(); // выключaем стaндaртную рoль элементa
-				$('#overlay').fadeIn(400, // снaчaлa плaвнo пoкaзывaем темную пoдлoжку
-		 		function(){ // пoсле выпoлнения предъидущей aнимaции
-					$('#modal_form') 
-						.css('display', 'block') // убирaем у мoдaльнoгo oкнa display: none;
-						.animate({opacity: 1, top: '50%'}, 200); // плaвнo прибaвляем прoзрaчнoсть oднoвременнo сo съезжaнием вниз
-				});
-			});
-		/* Зaкрытие мoдaльнoгo oкнa, тут делaем тo же сaмoе нo в oбрaтнoм пoрядке */
-		$('#modal_close, #overlay').click( function(){ // лoвим клик пo крестику или пoдлoжке
-			$('#modal_form')
-				.animate({opacity: 0, top: '45%'}, 200,  // плaвнo меняем прoзрaчнoсть нa 0 и oднoвременнo двигaем oкнo вверх
-					function(){ // пoсле aнимaции
-						$(this).css('display', 'none'); // делaем ему display: none;
-						$('#overlay').fadeOut(400); // скрывaем пoдлoжку
-					}
-				);
-		});
-});
-	</script>
-	
-	<div id="modal_form"><!-- модальное oкнo --> 
-      <span id="modal_close">X</span> <!-- Кнoпкa зaкрыть --> 
-      <form id="form_33740" onsubmit="create('url', 'title', 'score')">
-					<div class="form_description">
-			<h2>Добавить запись</h2>
-		</div>						
-			<ul >
-					<li id="li_1" >
-		<label class="description" for="element_1">Url </label>
-		<div>
-			<input id="url" name="url" type="text" maxlength="255" value=""/> 
-		</div> 
-		</li>		<li id="li_2" >
-		<label class="description" for="element_2">Название </label>
-		<div>
-			<input id="title" name="title" type="text" maxlength="255" value=""/> 
-		</div> 
-		</li>		<li id="li_3" >
-		<label class="description" for="element_3">Кол-во просмотров </label>
-		<div>
-			<input id="score" name="score" type="text" maxlength="255" value=""/> 
-		</div> 
-		</li>
-			    
-				<input id="saveForm" type="submit" name="submit" value="Submit" />
-			</ul>
-		</form><!-- Тут любoе сoдержимoе -->
+			<div class="add">
+				<button class="button" id="modal_show">Добавить запись</button>
+				<button class="button" id="clean">x</button>
+			</div>
+		</nav>
+		<div class="container">
+			<div class="content">
+				<div class="player" id="video-placeholder"></div>
+				<div class="bottom-player">
+					<div class="title-content" id="title"></div>
+					<div class="created_utc" id="created"></div>
+					<div class="view-counter" id="view"></div>
+				</div>
+			</div>
+			<div class="sidebar" id="sidebar"></div>
 		</div>
-		<div id="overlay"></div><!-- Пoдлoжкa -->
-	</body>
+	</div>
+	<script>
+		jQuery(document).ready(function() {
+			window.App.main();
+		});
+
+		var player;
+
+		function onYouTubePlayerAPIReady() {
+			player = new YT.Player('video-placeholder', {
+				height: '360',
+				width: '640',
+				videoId: '',
+				events: {
+					onReady: function() {
+						console.log("Плеер загружен");
+						App.firstVideo();
+					},
+				}
+			});
+		}
+	</script>
+
+	<div id="modal_form">
+		<!-- модальное oкнo -->
+		<span id="modal_close">X</span>
+		<!-- Кнoпкa зaкрыть -->
+		<form id="form_add">
+			<div class="form_description">
+				<h2>Добавить запись</h2>
+			</div>
+			<div class="status" id="status_modal">Строка статуса</div>
+			<ul>
+				<li id="li_1">
+					<label class="description" for="element_1">Url </label>
+					<div>
+						<input id="form_add_url" name="url" type="text" maxlength="255" value="" />
+					</div>
+				</li>
+				<li id="li_2">
+					<label class="description" for="element_2">Название </label>
+					<div>
+						<input id="form_add_title" name="title" type="text" maxlength="255" value="" />
+					</div>
+				</li>
+				<li id="li_3">
+					<label class="description" for="element_3">Кол-во просмотров </label>
+					<div>
+						<input id="form_add_score" name="score" type="text" maxlength="255" value="" />
+					</div>
+				</li>
+				<button id="form_save">Сохранить</button>
+			</ul>
+		</form>
+	</div>
+	<div id="overlay"></div>
+	<!-- Пoдлoжкa -->
+
+	<!--Footer        -->
+	<script type="text/javascript" src="scripts/app.js"></script>
+	<script src="https://www.youtube.com/player_api"></script>
+</body>
 </html>
