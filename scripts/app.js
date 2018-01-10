@@ -1,8 +1,30 @@
 (function(window) {
+  'use strict';
+
   var App = {};
+  var $ = window.jQuery;
+
+  var THUMBNAIL_ITEM_SEL = '[data-role="thumbnail item"]';
+  var SEARCH_INPUT_SEL = '[data-input-role="search"]';
+  var SEARCH_BUTTON_SEL = '[data-button-role="search"]';
+  var SEARCH_BY_SEL = '[data-role="search by"]';
+  var CLEAN_BUTTON_SEL = '[data-button-role="clean storage"]';
+  var VIDEO_TITLE_SEL = '[data-video-role="title"]';
+  var VIDEO_DATE_SEL = '[data-video-role="date"]';
+  var VIDEO_VIEWS_SEL = '[data-video-role="views"]';
+  var VIDEOS_LIST_SEL = '[data-role="videos list"]';
+  var SHOW_MODAL_BUTTON_SEL = '[data-button-role="show modal"]';
+  var CLOSE_MODAL_BUTTON_SEL = '[data-button-role="close modal"]';
+  var MODAL_SEL = '[data-role="modal"]';
+  var MODAL_STATUS_SEL = '[data-role="modal status line"]';
+  var INPUT_URL_SEL = '[data-input-role="url"]';
+  var INPUT_TITLE_SEL = '[data-input-role="title"]';
+  var INPUT_VIEWS_SEL = '[data-input-role="views"]';
+  var OVERLAY_SEL = '[data-role="overlay"]';
+  var SAVE_BUTTON_SEL = '[data-button-role="save video"]';
 
   App.main = function() {
-    if (localStorage.secondload == "true") {  //Инициализация при повторном запуске
+    if (localStorage.secondload == "true") { //Инициализация при повторном запуске
       initialize();
     } else { //Инициализация при первом запуске
       localStorage.secondload = "true";
@@ -10,18 +32,22 @@
 
         if (status == "success") {
           var videos = data.data.children;
+          var pattern = /([a-zA-Z0-9]|[-_]){11}/;
           for (var i in videos) {
-            var idVideo;
             if (videos[i].data.domain === "youtu.be" || videos[i].data.domain === "youtube.com") {
-              var pattern = /([a-zA-Z0-9]|[-_]){11}/;
-              idVideo = videos[i].data.url;
+              var idVideo = videos[i].data.url;
+              if (!pattern.test(idVideo)) continue;
               //разбор строки url и взятие id видео
               idVideo = idVideo.match(pattern)[0];
             } else {
               continue;
             }
 
-            var img = videos[i].data.media.oembed.thumbnail_url || "img/no-image.jpg";
+            var img = (
+              videos[i].data.media &&
+              videos[i].data.media.oembed &&
+              videos[i].data.media.oembed.thumbnail_url
+            ) || "img/no-image.jpg";
 
             storageSave(
               idVideo,
@@ -43,35 +69,27 @@
 
     for (var i = 0; i < localStorage.length; i++) {
       var object = storageLoad(i);
-
       if (!object) continue;
-
       lastvideo = createElement(object);
     }
 
     //регистрация обработчиков событий для добавления видео, поиска и воспроизведения первого видео
 
     //Очистка local storage
-    $("#clean").click(function() {
+    $(CLEAN_BUTTON_SEL).click(function(event) {
       localStorage.clear();
-      localStorage.secondload = null;
+      localStorage.secondload = undefined;
       status("Local storage clear");
-      //перезгрузка страницы
-      setTimeout(function() {
+      setTimeout(function() { //перезгрузка страницы
         location.reload();
       }, 1000);
     });
 
-    //Запуск верхнего видео после запуска прогирывателя
-    App.firstVideo = function() {
-      lastvideo.click();
-    };
-
     //Работа с модальным окном
-    $('#modal_show').click(function(event) {
+    $(SHOW_MODAL_BUTTON_SEL).click(function(event) {
       event.preventDefault();
-      $('#overlay').fadeIn(400, function() {
-        $('#modal_form')
+      $(OVERLAY_SEL).fadeIn(400, function() {
+        $(MODAL_SEL)
           .css('display', 'block')
           .animate({
             opacity: 1,
@@ -79,58 +97,72 @@
           }, 200);
       });
     });
-    /* Зaкрытие мoдaльнoгo oкнa, тут делaем тo же сaмoе нo в oбрaтнoм пoрядке */
-    $('#modal_close, #overlay').click(function() { // лoвим клик пo крестику или пoдлoжке
-      $('#modal_form')
+    // Зaкрытие мoдaльнoгo oкнa
+    $(CLOSE_MODAL_BUTTON_SEL).click(function() {
+      $(MODAL_SEL)
         .animate({
             opacity: 0,
             top: '45%'
-          }, 200, // плaвнo меняем прoзрaчнoсть нa 0 и oднoвременнo двигaем oкнo вверх
+          },
+          200,
           function() { // пoсле aнимaции
-            $(this).css('display', 'none'); // делaем ему display: none;
-            $('#overlay').fadeOut(400); // скрывaем пoдлoжку
+            $(this).css('display', 'none');
+            $(OVERLAY_SEL).fadeOut(400); // скрывaем пoдлoжку
           }
         );
     });
 
     //Регистрация обработчика на сохранение новой записи
-    $("#form_save").click(saveElement);
+    $(SAVE_BUTTON_SEL).click(saveElementHandler);
 
     //Регистрация обработчика на поиск записей по словам
-    $("#search-button").click(search);
+    $(SEARCH_BUTTON_SEL).click(searchHandler);
+    $(SEARCH_BUTTON_SEL).keydown(function(event) {
+      if (event.keyCode === 13) {
+        searchHandler(event);
+      }
+    })
 
+    //Запуск верхнего видео после запуска прогирывателя
+    lastvideo.click();
   }
 
-  function saveElement(event) {
+  function saveElementHandler(event) {
     event.preventDefault();
 
     var patId = /^([a-zA-Z0-9]|[-_]){11}$/;
     var patTitle = /[a-zA-Zа-яА-Я0-9]{5,}/;
-    var patScore = /^[0-9]+$/;
+    var patViews = /^[0-9]+$/;
 
-    var urlEl = $("#form_add_url").val();
-    var titleEl = $("#form_add_title").val();
-    var scoreEl = $("#form_add_score").val();
+    var $url = $(INPUT_URL_SEL);
+    var $title = $(INPUT_TITLE_SEL);
+    var $views = $(INPUT_VIEWS_SEL);
 
-    if (!patId.test(urlEl)) {
-      statusModal("Недопустимое ID видео")
-    } else if (!patTitle.test(titleEl)) {
+    if (!patId.test($url.val())) {
+      statusModal("Недопустимое ID видео");
+      return;
+    } else if (!patTitle.test($title.val())) {
       statusModal("Мне нужно больше символов!");
-    } else if (!patScore.test(scoreEl)) {
+      return;
+    } else if (!patViews.test($views.val())) {
       statusModal("Введите число просмотров");
+      return;
     } else {
       var element = {
-        id: urlEl,
-        title: titleEl,
-        score: scoreEl,
-        created: new Date(),
+        id: $url.val(),
+        title: $title.val(),
+        views: $views.val(),
+        date: (new Date()).getTime(),
         img: "img/no-image.jpg",
       };
 
-      storageSave(element.id, element.title, element.created, element.score, element.img);
+      storageSave(element.id, element.title, element.date, element.views, element.img);
       createElement(element);
 
-      $("#modal_close").click();
+      $url.val("");
+      $title.val("");
+      $views.val("");
+      $(CLOSE_MODAL_BUTTON_SEL).click();
 
       status("Добавлена запись : " + element.id);
     }
@@ -138,30 +170,32 @@
 
   function createElement(object) {
     var elementDescription = $("<div/>", {
-        class: "sidebar-description",
+        class: "thumbnail-description",
       })
       .append($("<div/>", {
-        class: "title-sidebar",
+        class: "thumbnail-title",
+        'data-role': 'search by',
         text: object.title,
       }))
       .append($("<div/>", {
-        class: "description",
-        text: object.score,
+        class: "thumbnail-views",
+        text: 'Просмотров: ' + object.views,
       }));
 
     var img = $("<img/>", {
-      class: "sidebar-img",
+      class: "thumbnail-image",
       src: object.img,
       alt: object.title,
     });
 
 
-    var element = $("<div/>", {
-      class: "sidebar-element",
+    var element = $("<li>", {
+      class: "thumbnail-item",
+      'data-role': 'thumbnail item',
       click: createCallback(object),
     }).append(img).append(elementDescription);
 
-    $("#sidebar").prepend(element);
+    $(VIDEOS_LIST_SEL).prepend(element);
 
     //возврат готового элемента для воспроизведения
     return element;
@@ -170,9 +204,9 @@
   function createCallback(object) //Изменение заголовка и описания основного окна и запуск видео
   {
     return function() {
-      $("#title").text(object.title);
-      $("#created").text(object.created);
-      $("#view").text(object.score);
+      $(VIDEO_TITLE_SEL).text(object.title);
+      $(VIDEO_DATE_SEL).text((new Date(object.date)).toLocaleString());
+      $(VIDEO_VIEWS_SEL).text('Просмотров: ' + object.views);
       player.loadVideoById({
         videoId: object.id
       });
@@ -183,30 +217,34 @@
   }
 
   //Функция поиска по словам
-  function search(event) {
-    var searchingString = $("#search-input").val();
+  function searchHandler(event) {
+    event.preventDefault();
+    var $searchInput = $(SEARCH_INPUT_SEL);
+    var searchingString = $searchInput.val().toLowerCase();
 
     if (searchingString == "") {
-      $(".sidebar-element").show();
+      $(THUMBNAIL_ITEM_SEL).show();
       return;
     }
 
-    $(".sidebar-element").hide();
-    $(".title-sidebar").each(function() {
-      if (~$(this).text().indexOf(searchingString)) {
-        $(this).closest(".sidebar-element").show();
+    $(SEARCH_BY_SEL).each(function() {
+      if ($(this).text().toLowerCase().indexOf(searchingString) == -1) {
+        $(this).closest(THUMBNAIL_ITEM_SEL).slideUp();
+      } else {
+        $(this).closest(THUMBNAIL_ITEM_SEL).show();
       }
     });
+    $searchInput.val("");
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Сохранение и загрузка в localStorage
-  function storageSave(id, title, created_utc, score, img) {
+  function storageSave(id, title, date, views, img) {
     //объект json, который будет хранится в localstorage в виде строки
     var object = {
       t: title,
-      c: created_utc,
-      s: score,
+      d: date,
+      v: views,
       i: img,
     };
     var objectstring = JSON.stringify(object);
@@ -214,7 +252,6 @@
   }
 
   function storageLoad(i) {
-
     var keyId = localStorage.key(i);
 
     //Убрать в релизе
@@ -226,7 +263,7 @@
 
     var value = JSON.parse(localStorage.getItem(keyId));
 
-    if (!value.t || !value.c) {
+    if (!value.t || !value.d) {
       console.log("Неизвестная запись " + keyId + " = " + localStorage[keyId]);
       return null;
     }
@@ -234,8 +271,8 @@
     var object = {
       id: keyId,
       title: value.t,
-      created: value.c,
-      score: value.s,
+      date: value.d,
+      views: value.v,
       img: value.i,
     };
 
@@ -247,14 +284,13 @@
 
   function status(msg) {
     console.log(msg);
-    $("#status").text(msg).slideDown();
-    setTimeout(function() {
-      $("#status").slideUp();
-    }, 5000);
   }
 
   function statusModal(msg) {
-    $("#status_modal").text(msg).slideDown();
+    $(MODAL_STATUS_SEL).text(msg).slideDown();
+    setTimeout(function () {
+      $(MODAL_STATUS_SEL).slideUp();
+    }, 5000);
   }
 
   window.App = App;

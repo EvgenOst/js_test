@@ -1,103 +1,73 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 	<meta charset="utf-8">
 	<link rel="stylesheet" type="text/css" href="stylesheets/styles.css">
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
 	<title>Пример</title>
 </head>
+
 <body>
-	<div class="status" id="status">Строка статуса</div>
-	<div class="body-container">
-		<nav class="navbar">
-			<div class="container-navbar">
+	<header class="main-header">
+		<ul>
+			<li>
 				<div class="profile">
-					<div class="icon"></div>
-					<div class="name button">Евгений</div>
+					<div class="main-icon"></div>
+					<div class="name-candidate button">Остапенко Евгений</div>
 				</div>
-				<div class="form-search">
-					<form action="" method="post" class="search">
-						<input type="text" id="search-input" placeholder="поиск" class="search-input" />
-						<button type="button" id="search-button" class="search-submit">Поиск</button>
-					</form>
-				</div>
-			</div>
-			<div class="add">
-				<button class="button" id="modal_show">Добавить запись</button>
-				<button class="button" id="clean">x</button>
-			</div>
-		</nav>
-		<div class="container">
-			<div class="content">
-				<div class="player" id="video-placeholder"></div>
-				<div class="bottom-player">
-					<div class="title-content" id="title"></div>
-					<div class="created_utc" id="created"></div>
-					<div class="view-counter" id="view"></div>
-				</div>
-			</div>
-			<div class="sidebar" id="sidebar"></div>
+			</li>
+			<li>
+				<form>
+					<input placeholder="Поиск..." class="search-input" data-input-role="search" autofocus>
+					<input type="button" value="Искать" class="button search-button" data-button-role="search">
+				</form>
+			</li>
+			<li>
+				<button class="button add_button" data-button-role="show modal">
+					Добавить запись
+				</button>
+				<button class="button clean" data-button-role="clean storage">
+					X
+				</button>
+			</li>
+		</ul>
+	</header>
+	<main class="main-content">
+		<div class="detail-video-container">
+			<div class="player" id="video-placeholder"></div>
+			<h1 class="detail-video-title" data-video-role="title"></h1>
+			<span class="detail-video-date" data-video-role="date"></span>
+			<span class="detail-video-views" data-video-role="views"></span>
 		</div>
-	</div>
-	<script>
-		jQuery(document).ready(function() {
-			window.App.main();
-		});
+		<ul class="thumbnail-list" data-role="videos list"></ul>
+	</main>
 
-		var player;
-
-		function onYouTubePlayerAPIReady() {
-			player = new YT.Player('video-placeholder', {
-				height: '360',
-				width: '640',
-				videoId: '',
-				events: {
-					onReady: function() {
-						console.log("Плеер загружен");
-						App.firstVideo();
-					},
-				}
-			});
-		}
-	</script>
-
-	<div id="modal_form">
-		<!-- модальное oкнo -->
-		<span id="modal_close">X</span>
-		<!-- Кнoпкa зaкрыть -->
-		<form id="form_add">
-			<div class="form_description">
-				<h2>Добавить запись</h2>
+	<div class="modal_form" data-role="modal">
+		<span class="modal_close" data-button-role="close modal">X</span>
+		<h2>Добавление записи</h2>
+		<div class="status" data-role="modal status line"></div>
+		<form>
+			<div class="form-group">
+				<label for="url">ID видео</label>
+				<input type="text" name="url" placeholder="xxxxxxxxxxx" value="" required pattern="^([a-zA-Z0-9]|[-_]){11}$" data-input-role="url">
 			</div>
-			<div class="status" id="status_modal">Строка статуса</div>
-			<ul>
-				<li id="li_1">
-					<label class="description" for="element_1">Url </label>
-					<div>
-						<input id="form_add_url" name="url" type="text" maxlength="255" value="" />
-					</div>
-				</li>
-				<li id="li_2">
-					<label class="description" for="element_2">Название </label>
-					<div>
-						<input id="form_add_title" name="title" type="text" maxlength="255" value="" />
-					</div>
-				</li>
-				<li id="li_3">
-					<label class="description" for="element_3">Кол-во просмотров </label>
-					<div>
-						<input id="form_add_score" name="score" type="text" maxlength="255" value="" />
-					</div>
-				</li>
-				<button id="form_save">Сохранить</button>
-			</ul>
+			<div class="form-group">
+				<label for="title">Название видео</label>
+				<input type="text" name="title" placeholder="Название" value="" required pattern="[a-zA-Zа-яА-Я0-9| ]{5,100}" data-input-role="title">
+			</div>
+			<div class="form-group">
+				<label for="views">Просмотры</label>
+				<input type="text" name="views" placeholder="просмотры" value="" required pattern="^[0-9]+$" data-input-role="views">
+			</div>
+			<button class="button" data-button-role="save video">Сохранить</button>
 		</form>
 	</div>
-	<div id="overlay"></div>
-	<!-- Пoдлoжкa -->
-
+	<div class="overlay" data-role="overlay"></div>
 	<!--Footer        -->
-	<script type="text/javascript" src="scripts/app.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+	<script src="scripts/app.js" charset="utf-8"></script>
+	<script src="scripts/main.js" charset="utf-8"></script>
 	<script src="https://www.youtube.com/player_api"></script>
 </body>
+
 </html>
